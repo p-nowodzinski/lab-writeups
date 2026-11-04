@@ -1,4 +1,4 @@
-This is a short writeup of the assessment found in the Password Attacks module on hackthebox. There is an attack summary section at the end that you can use as hints for what you need to do for the next step without providing you with the exact commands.
+This is a short writeup of the assessment found in the Password Attacks module on hackthebox. There is an attack summary section at the end that you can use as hints for what you need to do next without providing you with the exact commands.
 
 ## Initial Access:
 To start, we are given an employee name, Betty Jayde, who works for Nexura LLC and a password that she has been found to reuse on multiple websites (`Texas123!@#`). 
